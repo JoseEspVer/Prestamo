@@ -1,0 +1,132 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "API de Préstamos",
+      "description": "API para gestionar préstamos de libros.",
+      "version": "1.0.0"
+    },
+    "host": "localhost:8004",
+    "basePath": "/",
+    "schemes": ["http"],
+    "paths": {
+      "/prestamos": {
+        "get": {
+          "summary": "Obtener todos los préstamos",
+          "operationId": "obtenerPrestamos",
+          "responses": {
+            "200": {
+              "description": "Lista de préstamos",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Prestamo"
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Crear un nuevo préstamo",
+          "operationId": "crearPrestamo",
+          "parameters": [
+            {
+              "name": "body",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/PrestamoInput"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Préstamo creado",
+              "schema": {
+                "$ref": "#/definitions/Prestamo"
+              }
+            },
+            "400": {
+              "description": "Error en los datos de entrada"
+            },
+            "403": {
+              "description": "El usuario tiene sanciones"
+            },
+            "404": {
+              "description": "Usuario o ítem no encontrado"
+            }
+          }
+        }
+      },
+      "/prestamos/{id}": {
+        "delete": {
+          "summary": "Eliminar un préstamo",
+          "operationId": "eliminarPrestamo",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "ID del préstamo a eliminar"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Préstamo eliminado"
+            },
+            "404": {
+              "description": "Préstamo no encontrado"
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "Prestamo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "usuario_id": {
+            "type": "integer",
+            "example": 123
+          },
+          "item_id": {
+            "type": "integer",
+            "example": 456
+          },
+          "fecha_prestamo": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-10-06T10:45:30"
+          },
+          "fecha_devolucion": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-10-21T10:45:30"
+          },
+          "estado": {
+            "type": "string",
+            "example": "pendiente"
+          }
+        }
+      },
+      "PrestamoInput": {
+        "type": "object",
+        "required": ["usuario_id", "item_id"],
+        "properties": {
+          "usuario_id": {
+            "type": "integer",
+            "example": 123
+          },
+          "item_id": {
+            "type": "integer",
+            "example": 456
+          }
+        }
+      }
+    }
+  }
+  

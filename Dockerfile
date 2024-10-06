@@ -10,8 +10,7 @@ COPY . /app
 # Instalar las dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Exponer el puerto 8001
-EXPOSE 8001
+EXPOSE 8004
 
 # Comando para ejecutar la aplicación
 CMD ["python", "app.py"]
