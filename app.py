@@ -1,28 +1,19 @@
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify
 from models import db, Prestamo
 from config import Config
 from datetime import datetime
-from flask_swagger_ui import get_swaggerui_blueprint
+import requests  # Para manejar las solicitudes a los servicios externos
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Inicializar la base de datos
 db.init_app(app)
 
-# Swagger UI configuration
-SWAGGER_URL = '/swagger'
-API_URL = '/static/swagger.json'  
-swaggerui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
-
-# Ruta para obtener todos los préstamos
 @app.route('/prestamos', methods=['GET'])
 def obtener_prestamos():
     prestamos = Prestamo.query.all()
     return jsonify([p.to_dict() for p in prestamos])
 
-# Ruta para crear un nuevo préstamo
 @app.route('/prestamos', methods=['POST'])
 def crear_prestamo():
     data = request.get_json()
@@ -37,47 +28,68 @@ def crear_prestamo():
     if tiene_sancion(data['usuario_id']):
         return jsonify({"error": "El usuario tiene sanciones"}), 403
 
+    if not verificar_disponibilidad_item(data['item_id']):
+        return jsonify({"error": "No hay stock disponible"}), 400
+
     nuevo_prestamo = Prestamo(
         usuario_id=data['usuario_id'],
         item_id=data['item_id'],
         fecha_prestamo=datetime.now(),
         estado="pendiente"
     )
-    db.session.add(nuevo_prestamo)
-    db.session.commit()
-    return jsonify(nuevo_prestamo.to_dict()), 201
 
-@app.route('/prestamos/<int:id>', methods=['DELETE'])
-def eliminar_prestamo(id):
-    prestamo = Prestamo.query.get(id)
-
-    if not prestamo:
-        return jsonify({"error": "Préstamo no encontrado"}), 404
-
-    db.session.delete(prestamo)
-    db.session.commit()
-    return jsonify({"mensaje": "Préstamo eliminado"}), 200
-
-# Funciones adicionales
-def es_usuario_valido(usuario_id):
-    url = f"http://ip_del_servicio_de_usuarios:puerto/{usuario_id}"
-    response = request.get(url)
-    return response.status_code == 200
+    if modificar_stock(data['item_id'], "reducir"):
+        db.session.add(nuevo_prestamo)
+        db.session.commit()
+        return jsonify(nuevo_prestamo.to_dict()), 201
+    else:
+        return jsonify({"error": "No se pudo reducir el stock"}), 500
 
 def es_item_valido(item_id):
-    url = f"http://ip_del_servicio_de_usuarios:puerto/{item_id}"
-    response = request.get(url)
+    url = f"http://ip_del_servicio_de_stock:puerto/{item_id}"
+    response = requests.get(url)
     return response.status_code == 200
 
-def reducir_stock(item_id):
-    url = f"http://ip_del_servicio_de_stock:puerto/libros/{item_id}/reducir"
-    response = request.post(url)
+def verificar_disponibilidad_item(item_id):
+    url = f"http://ip_del_servicio_de_stock:puerto/{item_id}/stock"
+    response = requests.get(url)
+    if response.status_code == 200:
+        stock = response.json()
+        return stock > 0
+    return False
+
+def modificar_stock(item_id, accion):
+    url = f"http://ip_del_servicio_de_stock:puerto/{item_id}/modificar-stock"
+    response = requests.put(url, params={'accion': accion})
+    return response.status_code == 200
+
+
+def es_usuario_valido(usuario_id):
+    url = f"http://ip_del_servicio_de_usuarios:puerto/{usuario_id}"  # Cambiar a URL real
+    response = requests.get(url)
     return response.status_code == 200
 
 def tiene_sancion(usuario_id):
-    url = f"http://ip_del_servicio_de_sanciones:puerto/validate/{usuario_id}"
-    response = request.get(url)
-    return response.status_code == 200 and response.json().get('sancionado')
+    url = f"http://ip_del_servicio_de_sanciones:puerto/validate/{usuario_id}"  # Cambiar a URL real
+    response = requests.get(url)
+    if response.status_code == 200 and response.json().get('sancionado'):
+        return True
+    return False
+
+@app.route('/prestamos/<int:prestamo_id>/devolver', methods=['PUT'])
+def devolver_prestamo(prestamo_id):
+    prestamo = Prestamo.query.get_or_404(prestamo_id)
+    
+    if prestamo.estado == "devuelto":
+        return jsonify({"error": "El préstamo ya fue devuelto"}), 400
+
+    # Incrementar el stock al devolver el ítem
+    if modificar_stock(prestamo.item_id, "incrementar"):
+        prestamo.estado = "devuelto"
+        db.session.commit()
+        return jsonify(prestamo.to_dict()), 200
+    else:
+        return jsonify({"error": "No se pudo incrementar el stock"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8004)
