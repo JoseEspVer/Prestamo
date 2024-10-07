@@ -9,12 +9,12 @@ app.config.from_object(Config)
 
 db.init_app(app)
 
-@app.route('api/prestamos', methods=['GET'])
+@app.route('/api/prestamos', methods=['GET'])
 def obtener_prestamos():
     prestamos = Prestamo.query.all()
     return jsonify([p.to_dict() for p in prestamos])
 
-@app.route('api/prestamos', methods=['POST'])
+@app.route('/api/prestamos', methods=['POST'])
 def crear_prestamo():
     data = request.get_json()
 
@@ -79,7 +79,7 @@ def tiene_sancion(usuario_id):
         return True
     return False
 
-@app.route('api/prestamos/<int:prestamo_id>/devolver', methods=['PUT'])
+@app.route('/api/prestamos/<int:prestamo_id>/devolver', methods=['PUT'])
 def devolver_prestamo(prestamo_id):
     prestamo = Prestamo.query.get_or_404(prestamo_id)
     
