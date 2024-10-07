@@ -3,11 +3,18 @@ from models import db, Prestamo
 from config import Config
 from datetime import datetime
 import requests  # Para manejar las solicitudes a los servicios externos
+from flask_swagger_ui import get_swaggerui_blueprint
 
 app = Flask(__name__)
 app.config.from_object(Config)
+SWAGGER_URL = '/swagger'
+API_URL = '/static/swagger.json'
+
 
 db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 @app.route('/api/prestamos', methods=['GET'])
 def obtener_prestamos():

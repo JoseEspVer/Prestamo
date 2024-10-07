@@ -1,0 +1,25 @@
+services:
+  my-flask-app:
+    build: .
+    ports:
+      - "8004:8004"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/prestamos_db  # Cambia según lo que necesites
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres  # Cambia este valor si es necesario
+      POSTGRES_PASSWORD: password  # Cambia este valor si es necesario
+      POSTGRES_DB: prestamos_db  # Cambia este valor si es necesario
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
