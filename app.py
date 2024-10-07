@@ -46,12 +46,14 @@ def crear_prestamo():
         return jsonify({"error": "No se pudo reducir el stock"}), 500
 
 def es_item_valido(item_id):
-    url = f"http://ip_del_servicio_de_stock:puerto/{item_id}"
+    # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
+    url = f"http://spring_app:8080/{item_id}"
     response = requests.get(url)
     return response.status_code == 200
 
 def verificar_disponibilidad_item(item_id):
-    url = f"http://ip_del_servicio_de_stock:puerto/{item_id}/stock"
+    # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
+    url = f"http://spring_app:8080/{item_id}/stock"
     response = requests.get(url)
     if response.status_code == 200:
         stock = response.json()
@@ -59,20 +61,21 @@ def verificar_disponibilidad_item(item_id):
     return False
 
 def modificar_stock(item_id, accion):
-    url = f"http://ip_del_servicio_de_stock:puerto/{item_id}/modificar-stock"
+    # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
+    url = f"http://spring_app:8080/{item_id}/modificar-stock"
     response = requests.put(url, params={'accion': accion})
     return response.status_code == 200
 
-
 def es_usuario_valido(usuario_id):
-    url = f"http://ip_del_servicio_de_usuarios:puerto/{usuario_id}"  # Cambiar a URL real
+    # Usamos el nombre del contenedor 'gestionusuario_service' y el puerto 8081
+    url = f"http://gestionusuario_service:8081/{usuario_id}"
     response = requests.get(url)
     return response.status_code == 200
 
 def tiene_sancion(usuario_id):
-    url = f"http://ip_del_servicio_de_sanciones:puerto/validate/{usuario_id}"  # Cambiar a URL real
+    url = f"http://gestionusuario_service:8081/validate/{usuario_id}"
     response = requests.get(url)
-    if response.status_code == 200 and response.json().get('sancionado'):
+    if response.status_code == 200:
         return True
     return False
 
@@ -83,7 +86,6 @@ def devolver_prestamo(prestamo_id):
     if prestamo.estado == "devuelto":
         return jsonify({"error": "El préstamo ya fue devuelto"}), 400
 
-    # Incrementar el stock al devolver el ítem
     if modificar_stock(prestamo.item_id, "incrementar"):
         prestamo.estado = "devuelto"
         db.session.commit()
