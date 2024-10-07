@@ -6,11 +6,11 @@ services:
     volumes:
       - .:/app
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/prestamos_db  # Cambia según lo que necesites
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/prestamos_db  # Cambia según lo que necesites
     depends_on:
       - db
 
-  db:
+  postgres:
     image: postgres:14
     ports:
       - "5432:5432"

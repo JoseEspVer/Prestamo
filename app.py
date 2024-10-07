@@ -54,13 +54,13 @@ def crear_prestamo():
 
 def es_item_valido(item_id):
     # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
-    url = f"http://spring_app:8080/{item_id}"
+    url = f"http://spring_app:8080/api/inventario/{item_id}"
     response = requests.get(url)
     return response.status_code == 200
 
 def verificar_disponibilidad_item(item_id):
     # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
-    url = f"http://spring_app:8080/{item_id}/stock"
+    url = f"http://spring_app:8080/api/inventario/{item_id}/stock"
     response = requests.get(url)
     if response.status_code == 200:
         stock = response.json()
@@ -69,18 +69,18 @@ def verificar_disponibilidad_item(item_id):
 
 def modificar_stock(item_id, accion):
     # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
-    url = f"http://spring_app:8080/{item_id}/modificar-stock"
+    url = f"http://spring_app:8080/api/inventario/{item_id}/modificar-stock"
     response = requests.put(url, params={'accion': accion})
     return response.status_code == 200
 
 def es_usuario_valido(usuario_id):
     # Usamos el nombre del contenedor 'gestionusuario_service' y el puerto 8081
-    url = f"http://gestionusuario_service:8081/{usuario_id}"
+    url = f"http://gestionusuario_service:5001/api/User/{usuario_id}"
     response = requests.get(url)
     return response.status_code == 200
 
 def tiene_sancion(usuario_id):
-    url = f"http://gestionusuario_service:8081/validate/{usuario_id}"
+    url = f"http://gestionusuario_service:5001/api/validate/{usuario_id}"
     response = requests.get(url)
     if response.status_code == 200:
         return True
