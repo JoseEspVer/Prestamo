@@ -21,3 +21,21 @@ class Prestamo(db.Model):
             "fecha_devolucion": self.fecha_devolucion,
             "estado": self.estado
         }
+
+# Nueva entidad SolicitudLibro
+class SolicitudLibro(db.Model):
+    __tablename__ = 'solicitudes_libros'
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, nullable=False)
+    libro_id = db.Column(db.Integer, nullable=False)
+    carrera = db.Column(db.String(100), nullable=False)  # Nueva columna para asociar la carrera
+    es_urgente = db.Column(db.Boolean, default=False)    # Define si la solicitud es urgente
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "usuario_id": self.usuario_id,
+            "libro_id": self.libro_id,
+            "carrera": self.carrera,
+            "es_urgente": self.es_urgente
+        }

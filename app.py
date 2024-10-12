@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, redirect
-from models import db, Prestamo
+from models import db, Prestamo, SolicitudLibro  # Importar la nueva entidad SolicitudLibro
 from config import Config
 from datetime import datetime
 import requests  # Para manejar las solicitudes a los servicios externos
@@ -14,7 +14,6 @@ swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
     API_URL,
 )
-
 
 db.init_app(app)
 
@@ -44,7 +43,7 @@ def crear_prestamo():
     if tiene_sancion(data['usuario_id']):
         return jsonify({"error": "El usuario tiene sanciones"}), 403
 
-    if not verificar_disponibilidad_item(data['item_id']):
+    if not verificar_disponibilidad_item(data['item_id']): 
         return jsonify({"error": "No hay stock disponible"}), 400
 
     nuevo_prestamo = Prestamo(
@@ -61,40 +60,6 @@ def crear_prestamo():
     else:
         return jsonify({"error": "No se pudo reducir el stock"}), 500
 
-def es_item_valido(item_id):
-    # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
-    url = f"http://spring-app:8080/api/inventario/{item_id}"
-    response = requests.get(url)
-    return response.status_code == 200
-
-def verificar_disponibilidad_item(item_id):
-    # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
-    url = f"http://spring-app:8080/api/inventario/{item_id}/stock"
-    response = requests.get(url)
-    if response.status_code == 200:
-        stock = response.json()
-        return stock > 0
-    return False
-
-def modificar_stock(item_id, accion):
-    # Usamos el nombre del contenedor 'spring_app' y el puerto 8080
-    url = f"http://spring-app:8080/api/inventario/{item_id}/modificar-stock"
-    response = requests.put(url, params={'accion': accion})
-    return response.status_code == 200
-
-def es_usuario_valido(usuario_id):
-    # Usamos el nombre del contenedor 'gestionusuario_service' y el puerto 8081
-    url = f"http://gestionusuarioservice:5001/api/User/{usuario_id}"
-    response = requests.get(url)
-    return response.status_code == 200
-
-def tiene_sancion(usuario_id):
-    url = f"http://gestionusuarioservice:5001/api/validate/{usuario_id}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return True
-    return False
-
 @app.route('/api/prestamos/<int:prestamo_id>/devolver', methods=['PUT'])
 def devolver_prestamo(prestamo_id):
     prestamo = Prestamo.query.get_or_404(prestamo_id)
@@ -108,6 +73,62 @@ def devolver_prestamo(prestamo_id):
         return jsonify(prestamo.to_dict()), 200
     else:
         return jsonify({"error": "No se pudo incrementar el stock"}), 500
+
+
+
+@app.route('/api/solicitudes', methods=['GET'])
+def obtener_solicitudes():
+    solicitudes = SolicitudLibro.query.all()
+    return jsonify([s.to_dict() for s in solicitudes])
+
+@app.route('/api/solicitudes', methods=['POST'])
+def crear_solicitud():
+    data = request.get_json()
+
+    if 'usuario_id' not in data or 'libro_id' not in data or 'carrera' not in data:
+        return jsonify({"error": "Faltan campos requeridos"}), 400
+
+    nueva_solicitud = SolicitudLibro(
+        usuario_id=data['usuario_id'],
+        libro_id=data['libro_id'],
+        carrera=data['carrera'],
+        es_urgente=data.get('es_urgente', False)
+    )
+
+    db.session.add(nueva_solicitud)
+    db.session.commit()
+    return jsonify(nueva_solicitud.to_dict()), 201
+
+
+def es_item_valido(item_id):
+    url = f"http://spring-app:8080/api/inventario/{item_id}"
+    response = requests.get(url)
+    return response.status_code == 200
+
+def verificar_disponibilidad_item(item_id):
+    url = f"http://spring-app:8080/api/inventario/{item_id}/stock"
+    response = requests.get(url)
+    if response.status_code == 200:
+        stock = response.json()
+        return stock > 0
+    return False
+
+def modificar_stock(item_id, accion):
+    url = f"http://spring-app:8080/api/inventario/{item_id}/modificar-stock"
+    response = requests.put(url, params={'accion': accion})
+    return response.status_code == 200
+
+def es_usuario_valido(usuario_id):
+    url = f"http://gestionusuarioservice:5001/api/User/{usuario_id}"
+    response = requests.get(url)
+    return response.status_code == 200
+
+def tiene_sancion(usuario_id):
+    url = f"http://gestionusuarioservice:5001/api/validate/{usuario_id}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return True
+    return False
 
 app.register_blueprint(swaggerui_blueprint)
 
