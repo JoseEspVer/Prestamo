@@ -1,132 +1,231 @@
 {
-    "swagger": "2.0",
-    "info": {
-      "title": "API de Préstamos",
-      "description": "API para gestionar préstamos de libros.",
-      "version": "1.0.0"
+  "swagger": "2.0",
+  "info": {
+    "title": "API de Préstamos",
+    "description": "API para gestionar préstamos de libros.",
+    "version": "1.0.0"
+  },
+  "host": "localhost:8004",
+  "basePath": "/api/",
+  "schemes": ["http"],
+  "paths": {
+    "/prestamos": {
+      "get": {
+        "summary": "Obtener todos los préstamos",
+        "operationId": "obtenerPrestamos",
+        "responses": {
+          "200": {
+            "description": "Lista de préstamos",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Prestamo"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear un nuevo préstamo",
+        "operationId": "crearPrestamo",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PrestamoInput"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Préstamo creado",
+            "schema": {
+              "$ref": "#/definitions/Prestamo"
+            }
+          },
+          "400": {
+            "description": "Error en los datos de entrada"
+          },
+          "403": {
+            "description": "El usuario tiene sanciones"
+          },
+          "404": {
+            "description": "Usuario o ítem no encontrado"
+          }
+        }
+      }
     },
-    "host": "localhost:8004",
-    "basePath": "/api/",
-    "schemes": ["http"],
-    "paths": {
-      "/prestamos": {
-        "get": {
-          "summary": "Obtener todos los préstamos",
-          "operationId": "obtenerPrestamos",
-          "responses": {
-            "200": {
-              "description": "Lista de préstamos",
-              "schema": {
-                "type": "array",
-                "items": {
+    "/prestamos/{prestamo_id}/devolver": {
+      "put": {
+        "summary": "Devolver un préstamo",
+        "operationId": "devolverPrestamo",
+        "parameters": [
+          {
+            "name": "prestamo_id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del préstamo a devolver"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Préstamo devuelto con éxito",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "mensaje": {
+                  "type": "string"
+                },
+                "prestamo_asignado": {
                   "$ref": "#/definitions/Prestamo"
                 }
               }
             }
-          }
-        },
-        "post": {
-          "summary": "Crear un nuevo préstamo",
-          "operationId": "crearPrestamo",
-          "parameters": [
-            {
-              "name": "body",
-              "in": "body",
-              "required": true,
-              "schema": {
-                "$ref": "#/definitions/PrestamoInput"
-              }
-            }
-          ],
-          "responses": {
-            "201": {
-              "description": "Préstamo creado",
-              "schema": {
-                "$ref": "#/definitions/Prestamo"
-              }
-            },
-            "400": {
-              "description": "Error en los datos de entrada"
-            },
-            "403": {
-              "description": "El usuario tiene sanciones"
-            },
-            "404": {
-              "description": "Usuario o ítem no encontrado"
-            }
-          }
-        }
-      },
-      "/prestamos/{id}": {
-        "delete": {
-          "summary": "Eliminar un préstamo",
-          "operationId": "eliminarPrestamo",
-          "parameters": [
-            {
-              "name": "id",
-              "in": "path",
-              "required": true,
-              "type": "integer",
-              "description": "ID del préstamo a eliminar"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Préstamo eliminado"
-            },
-            "404": {
-              "description": "Préstamo no encontrado"
-            }
+          },
+          "400": {
+            "description": "El préstamo ya fue devuelto"
+          },
+          "500": {
+            "description": "Error al incrementar el stock"
           }
         }
       }
     },
-    "definitions": {
-      "Prestamo": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "usuario_id": {
-            "type": "integer",
-            "example": 123
-          },
-          "item_id": {
-            "type": "integer",
-            "example": 456
-          },
-          "fecha_prestamo": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2024-10-06T10:45:30"
-          },
-          "fecha_devolucion": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2024-10-21T10:45:30"
-          },
-          "estado": {
-            "type": "string",
-            "example": "pendiente"
+    "/solicitudes": {
+      "get": {
+        "summary": "Obtener todas las solicitudes",
+        "operationId": "obtenerSolicitudes",
+        "responses": {
+          "200": {
+            "description": "Lista de solicitudes",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SolicitudLibro"
+              }
+            }
           }
         }
       },
-      "PrestamoInput": {
-        "type": "object",
-        "required": ["usuario_id", "item_id"],
-        "properties": {
-          "usuario_id": {
-            "type": "integer",
-            "example": 123
+      "post": {
+        "summary": "Crear una nueva solicitud",
+        "operationId": "crearSolicitud",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SolicitudInput"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Solicitud creada",
+            "schema": {
+              "$ref": "#/definitions/SolicitudLibro"
+            }
           },
-          "item_id": {
-            "type": "integer",
-            "example": 456
+          "400": {
+            "description": "Error en los datos de entrada"
           }
         }
       }
     }
+  },
+  "definitions": {
+    "Prestamo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "example": 1
+        },
+        "usuario_id": {
+          "type": "integer",
+          "example": 123
+        },
+        "item_id": {
+          "type": "integer",
+          "example": 456
+        },
+        "fecha_prestamo": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-10-06T10:45:30"
+        },
+        "fecha_devolucion": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-10-21T10:45:30"
+        },
+        "estado": {
+          "type": "string",
+          "example": "pendiente"
+        }
+      }
+    },
+    "PrestamoInput": {
+      "type": "object",
+      "required": ["usuario_id", "item_id"],
+      "properties": {
+        "usuario_id": {
+          "type": "integer",
+          "example": 123
+        },
+        "item_id": {
+          "type": "integer",
+          "example": 456
+        }
+      }
+    },
+    "SolicitudLibro": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "example": 1
+        },
+        "usuario_id": {
+          "type": "integer",
+          "example": 123
+        },
+        "libro_id": {
+          "type": "integer",
+          "example": 456
+        },
+        "es_urgente": {
+          "type": "boolean",
+          "example": true
+        },
+        "fecha_solicitud": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-10-06T10:45:30"
+        }
+      }
+    },
+    "SolicitudInput": {
+      "type": "object",
+      "required": ["usuario_id", "libro_id"],
+      "properties": {
+        "usuario_id": {
+          "type": "integer",
+          "example": 123
+        },
+        "libro_id": {
+          "type": "integer",
+          "example": 456
+        },
+        "es_urgente": {
+          "type": "boolean",
+          "example": false
+        }
+      }
+    }
   }
-  
+}

@@ -28,14 +28,14 @@ class SolicitudLibro(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, nullable=False)
     libro_id = db.Column(db.Integer, nullable=False)
-    carrera = db.Column(db.String(100), nullable=False)  # Nueva columna para asociar la carrera
     es_urgente = db.Column(db.Boolean, default=False)    # Define si la solicitud es urgente
+    fecha_solicitud = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     def to_dict(self):
         return {
             "id": self.id,
             "usuario_id": self.usuario_id,
             "libro_id": self.libro_id,
-            "carrera": self.carrera,
-            "es_urgente": self.es_urgente
+            "es_urgente": self.es_urgente,
+            "fecha_solicitud": self.fecha_solicitud
         }

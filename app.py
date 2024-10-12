@@ -70,9 +70,19 @@ def devolver_prestamo(prestamo_id):
     if modificar_stock(prestamo.item_id, "incrementar"):
         prestamo.estado = "devuelto"
         db.session.commit()
-        return jsonify(prestamo.to_dict()), 200
+
+        # Al devolver el libro, revisa si hay solicitudes pendientes
+        prestamo_asignado = asignar_prestamo_a_solicitud(prestamo.item_id)
+        if prestamo_asignado:
+            return jsonify({
+                "mensaje": "Préstamo devuelto y nuevo préstamo asignado a una solicitud urgente",
+                "prestamo_asignado": prestamo_asignado
+            }), 200
+        else:
+            return jsonify({"mensaje": "Préstamo devuelto, no hay solicitudes pendientes"}), 200
     else:
         return jsonify({"error": "No se pudo incrementar el stock"}), 500
+
 
 
 
@@ -91,13 +101,44 @@ def crear_solicitud():
     nueva_solicitud = SolicitudLibro(
         usuario_id=data['usuario_id'],
         libro_id=data['libro_id'],
-        carrera=data['carrera'],
-        es_urgente=data.get('es_urgente', False)
+
+        es_urgente=data.get('es_urgente', False),
+        fecha_solicitud=datetime.now()
     )
 
     db.session.add(nueva_solicitud)
     db.session.commit()
     return jsonify(nueva_solicitud.to_dict()), 201
+
+
+
+def asignar_prestamo_a_solicitud(libro_id):
+    solicitudes = SolicitudLibro.query.filter_by(libro_id=libro_id).order_by(
+        SolicitudLibro.es_urgente.desc(),
+        SolicitudLibro.fecha_solicitud.asc()
+    ).all()
+
+    if not solicitudes:
+        return None
+
+    solicitud = solicitudes[0] 
+
+    nuevo_prestamo = Prestamo(
+        usuario_id=solicitud.usuario_id,
+        item_id=solicitud.libro_id,
+        fecha_prestamo=datetime.now(),
+        estado="pendiente",
+        solicitud_id=solicitud.id
+    )
+
+    if modificar_stock(solicitud.libro_id, "reducir"):
+        db.session.add(nuevo_prestamo)
+        db.session.delete(solicitud) 
+        db.session.commit()
+        return nuevo_prestamo.to_dict()
+    else:
+        return None
+
 
 
 def es_item_valido(item_id):
