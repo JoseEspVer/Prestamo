@@ -5,7 +5,7 @@
     "description": "API para gestionar préstamos de libros.",
     "version": "1.0.0"
   },
-  "host": "localhost:8004",
+  "host": "pp-api-246253878.us-east-1.elb.amazonaws.com:8004/swagger/#/default/crearPrestamo:8004",
   "basePath": "/api/",
   "schemes": ["http"],
   "paths": {
